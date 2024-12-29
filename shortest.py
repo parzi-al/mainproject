@@ -88,8 +88,8 @@ def main():
             "Kitchen": 2.5,
             "Master Bedroom": 3.0,
             "Bedroom": 3.0
-          },
-          "routers":{"router1"}
+          }
+       
         },
         "Kitchen": {
           "coords": [8.0, 7.0],
@@ -103,8 +103,8 @@ def main():
         },
         "Bedroom": {
           "coords": [8.0, 10.0],
-          "connections": {"Balcony2": 1.0, "Dining Space": 3.0},
-          "routers":{"router1"}
+          "connections": {"Balcony2": 1.0, "Dining Space": 3.0}
+       
         },
         "Master Bedroom": {
           "coords": [2.5, 7.0],
@@ -119,7 +119,7 @@ def main():
         "Balcony1": {
           "coords": [1.0, 9.0],
           "connections": {"Master Bedroom": 1.0}
-        
+       
         },
         "Balcony2": {
           "coords": [9.0, 10.0],
