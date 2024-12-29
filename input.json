@@ -1,0 +1,9 @@
+{
+    "nodes": {
+      "A": {"coords": [0, 0], "connections": {"B": 2, "C": 5}},
+      "B": {"coords": [2, 0], "connections": {"A": 2, "C": 6, "D": 1}},
+      "C": {"coords": [5, 0], "connections": {"A": 5, "B": 6, "D": 3}},
+      "D": {"coords": [3, 1], "connections": {"B": 1, "C": 3}}
+    }
+  }
+  
