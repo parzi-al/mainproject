@@ -1,7 +1,8 @@
 import json
 import heapq
+import numpy as np
 
-# A* algorithm implementation
+# Existing A* algorithm and helpers
 def a_star(graph, start, goal, unsafe_segments):
     open_set = []
     heapq.heappush(open_set, (0, start))
@@ -31,11 +32,9 @@ def a_star(graph, start, goal, unsafe_segments):
 
     return None, float('inf')
 
-# Heuristic function for A* (Euclidean distance)
 def heuristic(coord1, coord2):
     return ((coord1[0] - coord2[0])**2 + (coord1[1] - coord2[1])**2) ** 0.5
 
-# Reconstruct the path from start to goal
 def reconstruct_path(came_from, current):
     path = [current]
     while current in came_from:
@@ -43,115 +42,93 @@ def reconstruct_path(came_from, current):
         path.append(current)
     return path[::-1]
 
-# Function to check path safety dynamically
-def check_path_safety(graph, path, unsafe_segments):
-    for i in range(len(path) - 1):
-        print(f"Is the path from {path[i]} to {path[i+1]} safe? (1 for Yes, 0 for No)")
-        user_input = int(input("Enter your choice: "))
-        if user_input == 0:
-            # Mark the segment as unsafe and discard the path
-            unsafe_segments.add((path[i], path[i+1]))
-            return False
-    return True
+def find_closest_node(user_location, graph):
+    """Find the closest graph node to the given user location."""
+    min_distance = float('inf')
+    closest_node = None
+    for node, data in graph['nodes'].items():
+        distance = heuristic(user_location, data['coords'])
+        if distance < min_distance:
+            min_distance = distance
+            closest_node = node
+    return closest_node
 
-# Main function
+def estimate_user_location(device_locs, distances):
+    points = []
+    radii = []
+    for device, location in device_locs.items():
+        if device in distances:
+            points.append(location)
+            radii.append(distances[device])
+    if len(points) < 3:
+        raise ValueError("At least three points are required for trilateration.")
+    A = []
+    B = []
+    for i in range(1, len(points)):
+        x1, y1 = points[0]
+        x2, y2 = points[i]
+        r1, r2 = radii[0], radii[i]
+        A.append([2 * (x2 - x1), 2 * (y2 - y1)])
+        B.append(r1**2 - r2**2 - x1**2 - y1**2 + x2**2 + y2**2)
+    A = np.array(A)
+    B = np.array(B)
+    estimated_position = np.linalg.lstsq(A, B, rcond=None)[0]
+    return tuple(estimated_position)
+
 def main():
+    # Floor plan device locations
+    device_locations = {
+        "Device 1": (8.0, 10.0),  # Bedroom
+        "Device 2": (2.5, 7.0),   # Master Bedroom
+        "Device 3": (5.5, 3.5),   # Dining Hall
+        "Device 4": (7.5, 0.0)    # Living Room
+    }
+
+    # Workflow output distances
+    device_distances = {
+        "Device 1": 14.83,
+        "Device 2": 43.36,
+        "Device 3": 48.33,
+        "Device 4": 48.33
+    }
+
+    # Estimate user location
+    user_location = estimate_user_location(device_locations, device_distances)
+    print(f"Estimated user location: {user_location}")
+
     # Input JSON for the building layout
     json_input = '''
     {
       "nodes": {
-        "Entrance": {
-          "coords": [0, 0],
-          "connections": {"Verandah": 2.5}
-       
-        },
-        "Verandah": {
-          "coords": [2.5, 0],
-          "connections": {"Entrance": 2.5, "Living Room": 5.0, "Stair Hall": 3.5}
-       
-        },
-        "Living Room": {
-          "coords": [7.5, 0],
-          "connections": {"Verandah": 5.0, "Dining Space": 3.0, "Toilet2": 1.5}
-       
-        },
-        "Stair Hall": {
-          "coords": [2.5, 3.5],
-          "connections": {"Verandah": 3.5, "Dining Space": 3.0}
-       
-        },
-        "Dining Space": {
-          "coords": [5.5, 3.5],
-          "connections": {
-            "Living Room": 3.0,
-            "Stair Hall": 3.0,
-            "Kitchen": 2.5,
-            "Master Bedroom": 3.0,
-            "Bedroom": 3.0
-          }
-       
-        },
-        "Kitchen": {
-          "coords": [8.0, 7.0],
-          "connections": {"Dining Space": 2.5}
-       
-        },
-        "Toilet2": {
-          "coords": [8.0, 8.5],
-          "connections": {"Living Room": 1.5}
-       
-        },
-        "Bedroom": {
-          "coords": [8.0, 10.0],
-          "connections": {"Balcony2": 1.0, "Dining Space": 3.0}
-       
-        },
-        "Master Bedroom": {
-          "coords": [2.5, 7.0],
-          "connections": {"Dining Space": 3.0, "Toilet": 1.5, "Balcony1": 1.0}
-       
-        },
-        "Toilet": {
-          "coords": [1.0, 7.0],
-          "connections": {"Master Bedroom": 1.5}
-       
-        },
-        "Balcony1": {
-          "coords": [1.0, 9.0],
-          "connections": {"Master Bedroom": 1.0}
-       
-        },
-        "Balcony2": {
-          "coords": [9.0, 10.0],
-          "connections": {"Bedroom": 1.0}
-        }
+        "Entrance": {"coords": [0, 0], "connections": {"Verandah": 2.5}},
+        "Verandah": {"coords": [2.5, 0], "connections": {"Entrance": 2.5, "Living Room": 5.0, "Stair Hall": 3.5}},
+        "Living Room": {"coords": [7.5, 0], "connections": {"Verandah": 5.0, "Dining Space": 3.0}},
+        "Stair Hall": {"coords": [2.5, 3.5], "connections": {"Verandah": 3.5, "Dining Space": 3.0}},
+        "Dining Space": {"coords": [5.5, 3.5], "connections": {"Living Room": 3.0, "Stair Hall": 3.0, "Bedroom": 3.0, "Master Bedroom": 3.0}},
+        "Bedroom": {"coords": [8.0, 10.0], "connections": {"Dining Space": 3.0}},
+        "Master Bedroom": {"coords": [2.5, 7.0], "connections": {"Dining Space": 3.0}}
       }
     }
     '''
-    
-    # Parse JSON into Python dictionary
+
     graph = json.loads(json_input)
-    
-    # Input start and end points
-    start_node = "Entrance"
-    end_node = "Bedroom"
-    
+
+    # Determine the closest node
+    start_node = find_closest_node(user_location, graph)
+    print(f"Closest node to user location: {start_node}")
+
+    # Define the goal node
+    end_node = "Entrance"
+
+    # Find the shortest path
     unsafe_segments = set()
-    
-    while True:
-        path, distance = a_star(graph, start_node, end_node, unsafe_segments)
-        if path:
-         
-            is_safe = check_path_safety(graph, path, unsafe_segments)
-            if is_safe:
-                print("Safe path found!")
-                print(f"Shortest path from {start_node} to {end_node}: {' -> '.join(path)}")
-                print(f"Total distance: {distance:.2f} meters")
-                
-                break
-        else:
-            print(f"No safe path found from {start_node} to {end_node}.")
-            break
+    path, distance = a_star(graph, start_node, end_node, unsafe_segments)
+
+    if path:
+        print(f"Shortest path from {start_node} to {end_node}: {' -> '.join(path)}")
+        print(f"Total distance: {distance:.2f} meters")
+    else:
+        print(f"No path found from {start_node} to {end_node}.")
 
 if __name__ == "__main__":
     main()
