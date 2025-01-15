@@ -36,7 +36,7 @@ def get_wifi_networks():
     networks = []
     if platform.system() == "Windows":
         cmd = "netsh wlan show networks mode=bssid"
-        output = subprocess.check_output(cmd, shell=True, text=True)
+        output = subprocess.check_output(cmd, shell=True, encoding='utf-8', errors='ignore')  # Fixed encoding
         lines = output.splitlines()
         ssid = None
         for line in lines:
@@ -49,7 +49,7 @@ def get_wifi_networks():
                     networks.append({"SSID": ssid, "Signal": signal})
     elif platform.system() == "Linux":
         cmd = "nmcli -f SSID,SIGNAL dev wifi list"
-        output = subprocess.check_output(cmd, shell=True, text=True)
+        output = subprocess.check_output(cmd, shell=True, encoding='utf-8', errors='ignore')  # Fixed encoding
         lines = output.splitlines()[1:]  # Skip header
         for line in lines:
             parts = line.split()
