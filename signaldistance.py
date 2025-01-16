@@ -1,7 +1,6 @@
 import numpy as np
 import platform
 import subprocess
-from pywifi import PyWiFi, const
 
 def estimate_distance(power_received, params=None):
     """
@@ -15,7 +14,7 @@ def estimate_distance(power_received, params=None):
         tuple: (d_est, d_min, d_max) in meters, rounded to two decimal points.
     """
     if params is None:
-        params = (1.0, -55.0, 2.0, 2.5)
+        params = (1.0, -55.0, 2.0, 2.5)  # Default values for d_ref, power_ref, path_loss_exp, and stdev_power
 
     d_ref, power_ref, path_loss_exp, stdev_power = params
     uncertainty = 2 * stdev_power  # Approx. 95.45% confidence range
@@ -36,7 +35,7 @@ def get_wifi_networks():
     networks = []
     if platform.system() == "Windows":
         cmd = "netsh wlan show networks mode=bssid"
-        output = subprocess.check_output(cmd, shell=True, encoding='utf-8', errors='ignore')  # Fixed encoding
+        output = subprocess.check_output(cmd, shell=True, encoding='utf-8', errors='ignore')
         lines = output.splitlines()
         ssid = None
         for line in lines:
@@ -49,7 +48,7 @@ def get_wifi_networks():
                     networks.append({"SSID": ssid, "Signal": signal})
     elif platform.system() == "Linux":
         cmd = "nmcli -f SSID,SIGNAL dev wifi list"
-        output = subprocess.check_output(cmd, shell=True, encoding='utf-8', errors='ignore')  # Fixed encoding
+        output = subprocess.check_output(cmd, shell=True, encoding='utf-8', errors='ignore')
         lines = output.splitlines()[1:]  # Skip header
         for line in lines:
             parts = line.split()
@@ -62,25 +61,28 @@ def get_wifi_networks():
         print("Unsupported platform. Only Windows and Linux are supported.")
     return networks
 
-def display_network_distances():
+def calculate_and_display_distances(wifi_data):
     """
-    Display available WiFi networks and their estimated distances.
+    Calculate and display distances for given WiFi data.
+    
+    :param wifi_data: List of dictionaries containing SSID and Signal strength.
     """
-    print("Scanning for WiFi networks...")
-    networks = get_wifi_networks()
+    print("\nWiFi Network Distances:")
+    for device in wifi_data:
+        ssid = device.get('SSID', 'Unknown SSID')
+        signal = device.get('Signal', None)
 
-    if not networks:
-        print("No networks found.")
-        return
-
-    print("\nAvailable Networks:")
-    for network in networks:
-        ssid = network["SSID"]
-        signal = network["Signal"]
-        d_est, d_min, d_max = estimate_distance(signal)
-        print(f"SSID: {ssid}, Signal: {signal} dBm")
-        print(f"  Estimated Distance: {d_est} m")
-        print(f"  Distance Range: {d_min} - {d_max} m\n")
+        if signal is not None:
+            d_est, d_min, d_max = estimate_distance(signal)
+            print(f"SSID: {ssid}, Signal: {signal} dBm")
+            print(f"  Estimated Distance: {d_est} m (Range: {d_min} - {d_max} m)\n")
+        else:
+            print(f"SSID: {ssid} has no valid signal strength.\n")
 
 if __name__ == '__main__':
-    display_network_distances()
+    # For standalone usage, scan and display network distances
+    networks = get_wifi_networks()
+    if networks:
+        calculate_and_display_distances(networks)
+    else:
+        print("No networks found.")

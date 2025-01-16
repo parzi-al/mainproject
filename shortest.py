@@ -1,6 +1,7 @@
 import json
 import heapq
 import math
+from signaldistance import estimate_distance  # Import distance estimation function
 
 # A* algorithm implementation
 def a_star(graph, start, goal, unsafe_segments):
@@ -58,6 +59,22 @@ def determine_location(devices, distances, graph):
 
     return nearest_room
 
+# Function to filter valid devices and calculate distances
+def process_devices(wifi_data, graph):
+    valid_devices = {}
+    distances = {}
+
+    for device in wifi_data:
+        ssid = device.get('name', 'Unknown SSID')
+        signal_strength = device.get('signalStrength', None)
+
+        if ssid in graph['nodes'] and isinstance(signal_strength, (int, float)):
+            distance, _, _ = estimate_distance(signal_strength)
+            valid_devices[ssid] = graph['nodes'][ssid]['coords']
+            distances[ssid] = distance
+
+    return valid_devices, distances
+
 # Main function
 def main():
     # Input JSON for the building layout
@@ -78,35 +95,19 @@ def main():
         }
     }''')
 
-    # Wi-Fi devices in rooms
-    # Sample input for devices and distances
-    devices = {
-        "Device1": "Bedroom",
-        "Device2": "Dining Space",
-        "Device3": "Kitchen"
-    }
+    # Sample Wi-Fi data input
+    wifi_data = [
+        {"name": "MITS_STAFF", "signalStrength": -50},
+        {"name": "Placement_Cell", "signalStrength": -40},
+        {"name": "Unknown_SSID", "signalStrength": -70}
+    ]
 
-    distances = {
-        "Device1": 10,
-        "Device2": 2.5,
-        "Device3": 8.0
-    }
-
-    # Print the devices and their locations
-    print("Devices:")
-    for device, location in devices.items():
-        print(f"  - {device} located in {location}")
-
-    # Print the distances to the devices
-    print("\nDistances to devices from the user:")
-    for device, distance in distances.items():
-        print(f"  - Distance to {device}: {distance} meters")
-
+    # Process valid devices
+    devices, distances = process_devices(wifi_data, graph)
 
     # Determine the user's location
     user_location = determine_location(devices, distances, graph)
     print(f"User is located in: {user_location}")
-  
 
     # Compute the shortest path to the Entrance
     unsafe_segments = set()
