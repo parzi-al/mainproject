@@ -26,9 +26,9 @@ graph = {
         "Kitchen": {"coords": [8.0, 7.0], "connections": {"Dining Space": 2.5}},
         "Toilet2": {"coords": [8.0, 8.5], "connections": {"Living Room": 1.5}},
         "Bedroom": {"coords": [8.0, 10.0], "connections": {"Balcony2": 1.0, "Dining Space": 3.0}},
-        "Master Bedroom": {"coords": [2.5, 7.0], "connections": {"Dining Space": 3.0, "Toilet": 1.5, "Balcony1": 1.0}},
+        "Master Bedroom": {"coords": [2.5, 7.0], "connections": {"Dining Space": 3.0, "Toilet": 1.5, "Entrance1": 1.0}},
         "Toilet": {"coords": [1.0, 7.0], "connections": {"Master Bedroom": 1.5}},
-        "Balcony1": {"coords": [1.0, 9.0], "connections": {"Master Bedroom": 1.0}},
+        "Entrance1": {"coords": [1.0, 9.0], "connections": {"Master Bedroom": 1.0}},
         "Balcony2": {"coords": [9.0, 10.0], "connections": {"Bedroom": 1.0}}
     }
 }
