@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Unsafe Nodes & Device Tracker</title>
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        ul, pre {
+            list-style-type: none;
+            padding: 0;
+            text-align: left;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+            padding: 20px;
+            border: 2px solid #ff4c4c;
+            border-radius: 10px;
+            box-shadow: 2px 2px 10px gray;
+            margin-bottom: 20px;
+        }
+        .unsafe {
+            color: red;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #ff4c4c;
+            color: white;
+        }
+        #consoleLog {
+            background: black;
+            color: green;
+            padding: 10px;
+            height: 300px;
+            overflow-y: scroll;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Real-Time Unsafe Nodes</h1>
+        <ul id="unsafeNodesList"><li>Loading...</li></ul>
+    </div>
+
+    <div class="container">
+        <h2>Tracked Devices</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Device Tag</th>
+                    <th>Current Location</th>
+                    <th>Assigned Exit</th>
+                </tr>
+            </thead>
+            <tbody id="deviceList"><tr><td colspan="3">No devices detected...</td></tr></tbody>
+        </table>
+    </div>
+
+    <div class="container">
+        <h3>Console Logs</h3>
+        <pre id="consoleLog">Waiting for logs...</pre>
+    </div>
+
+    <script>
+        var socket = io.connect("http://127.0.0.1:5000");
+
+        socket.on("update_unsafe_nodes", function(data) {
+            var list = document.getElementById("unsafeNodesList");
+            list.innerHTML = data.length === 0 ? "<li>No unsafe nodes</li>" : data.map(node => `<li class="unsafe">${node}</li>`).join("");
+        });
+
+        socket.on("update_devices", function(data) {
+            var tableBody = document.getElementById("deviceList");
+            tableBody.innerHTML = data.length === 0 ? "<tr><td colspan='3'>No devices detected...</td></tr>" : 
+                data.map(device => `<tr><td>${device.device_tag}</td><td>${device.user_location}</td><td>${device.assigned_exit}</td></tr>`).join("");
+        });
+
+        socket.on("log_update", function(data) {
+            var consoleLog = document.getElementById("consoleLog");
+            consoleLog.textContent += "\n" + data.log;
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        });
+    </script>
+</body>
+</html>

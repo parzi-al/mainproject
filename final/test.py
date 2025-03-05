@@ -1,60 +1,87 @@
 import requests
-import time
-import json
 import random
+import time
+import threading
 
-BASE_URL = "http://127.0.0.1:5000"  # Change if running on a different server
+# Configuration
+BASE_URL = "http://localhost:5000"
+NUM_DEVICES = 50
+FIRE_UPDATE_INTERVAL = 10  # seconds
 
-def test_device(device_tag, wifi_devices):
-    url = f"{BASE_URL}/"
-    payload = {
-        "device_tag": device_tag,
-        "wifi_devices": wifi_devices
-    }
-    headers = {"Content-Type": "application/json"}
+# List of valid router names from the server's configuration
+ROUTERS = ["CS_Lab", "bvn s22", "MITS_STAFF"]
+NODES = [
+    "Entrance", "Verandah", "Living Room", "Stair Hall", "Dining Space",
+    "Kitchen", "Toilet2", "Bedroom", "Master Bedroom", "Toilet",
+    "Balcony1", "Balcony2"
+]
+
+def simulate_device(device_id):
+    device_tag = f"device_{device_id:02d}"
+    print(f"Starting device {device_tag}")
     
-    response = requests.post(url, data=json.dumps(payload), headers=headers)
-    print(f"Device: {device_tag} - Response: {response.json()}\n")
-    return response.json()
+    try:
+        # Simulate 5 location updates
+        for _ in range(5):
+            # Generate random signal strengths (-100 to -30 dBm)
+            wifi_devices = [{
+                "name": router,
+                "signalStrength": random.randint(-90, -40)
+            } for router in random.sample(ROUTERS, 2)]  # Always send 2 routers
 
-def get_result(device_tag):
-    url = f"{BASE_URL}/result/{device_tag}"
-    response = requests.get(url)
-    print(f"Device: {device_tag} - Result: {response.json()}\n")
-    return response.json()
+            payload = {
+                "wifi_devices": wifi_devices,
+                "device_tag": device_tag
+            }
 
-def release_exit(device_tag):
-    url = f"{BASE_URL}/exit/{device_tag}"
-    response = requests.post(url)
-    print(f"Device: {device_tag} - Exit Released: {response.json()}\n")
-    return response.json()
+            response = requests.post(f"{BASE_URL}/", json=payload)
+            print(f"{device_tag} location update: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                print(f"{device_tag} path: {data['data']['shortest_path']}")
+            
+            time.sleep(random.uniform(2, 5))
+            
+        # Simulate exiting
+        response = requests.post(f"{BASE_URL}/exit/{device_tag}")
+        print(f"{device_tag} exit: {response.status_code}")
+        
+    except Exception as e:
+        print(f"Error in {device_tag}: {str(e)}")
+
+def simulate_fire_alerts():
+    while True:
+        # Randomly select 1-3 nodes to set on fire
+        fire_nodes = random.sample(NODES, random.randint(1, 3))
+        payload = {"nodes": fire_nodes}
+        
+        try:
+            response = requests.post(f"{BASE_URL}/fire", json=payload)
+            print(f"Fire update ({fire_nodes}): {response.status_code}")
+        except Exception as e:
+            print(f"Fire simulation error: {str(e)}")
+        
+        time.sleep(FIRE_UPDATE_INTERVAL)
+
+def main():
+    # Start fire simulation thread
+    fire_thread = threading.Thread(target=simulate_fire_alerts)
+    fire_thread.start()
+
+    # Create device threads
+    threads = []
+    for device_id in range(1, NUM_DEVICES + 1):
+        thread = threading.Thread(target=simulate_device, args=(device_id,))
+        threads.append(thread)
+        thread.start()
+        time.sleep(0.5)  # Stagger device starts
+
+    # Wait for all threads to complete
+    for thread in threads:
+        thread.join()
+
+    print("All devices completed their simulations")
 
 if __name__ == "__main__":
-    # Generate 100 device tags and corresponding WiFi device data
-    device_tags = [f"device_{i}" for i in range(1, 101)]
-    devices_data_list = [
-        [
-            {"name": random.choice(["CS_Lab", "bvn s22", "MITS_STAFF"]), "signalStrength": random.randint(-80, -50)},
-            {"name": random.choice(["CS_Lab", "bvn s22", "MITS_STAFF"]), "signalStrength": random.randint(-150, -10)},
-            {"name": random.choice(["CS_Lab", "bvn s22", "MITS_STAFF"]), "signalStrength": random.randint(-60, -20)}
-        ]
-        for _ in range(100)
-    ]
-    
-    # Simulate multiple devices
-    for tag, wifi_data in zip(device_tags, devices_data_list):
-        test_device(tag, wifi_data)
-        time.sleep(0.1)  # Small delay to simulate real-world scenario
-    
-    # Fetch results
-    for tag in device_tags:
-        get_result(tag)
-        time.sleep(0.1)
-    
-    # Randomly select a subset of device tags to release exits
-    subset_to_release = random.sample(device_tags, k=50)  # Release exits for 50 random devices
-    
-    # Release exits
-    for tag in subset_to_release:
-        release_exit(tag)
-        time.sleep(0.1)
+    main()

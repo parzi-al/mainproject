@@ -2,71 +2,48 @@ import json
 import heapq
 import math
 import random
+from safety_check import is_safe
 
-# Number of particles for Monte Carlo Localization
 NUM_PARTICLES = 1000
 
-# Heuristic function (Euclidean distance)
 def heuristic(coord1, coord2):
     return math.sqrt((coord1[0] - coord2[0])**2 + (coord1[1] - coord2[1])**2)
 
-# Check if a line between two points intersects any walls (obstructions)
 def is_line_of_sight_clear(start, end, walls):
     for wall in walls:
-        # Check if the line between 'start' and 'end' intersects the wall
-        # Assuming walls are represented as line segments (x1, y1, x2, y2)
         x1, y1, x2, y2 = wall
         if do_lines_intersect(start, end, (x1, y1), (x2, y2)):
             return False
     return True
 
-# Check if two line segments intersect
 def do_lines_intersect(p1, p2, p3, p4):
     def ccw(A, B, C):
         return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0])
     
     return ccw(p1, p3, p4) != ccw(p2, p3, p4) and ccw(p1, p2, p3) != ccw(p1, p2, p4)
 
-# Particle Filter Localization (Monte Carlo Localization - MCL)
 def particle_filter_localization(routers, distances, walls):
-    particles = []
+    particles = [(random.uniform(0, 10), random.uniform(0, 10)) for _ in range(NUM_PARTICLES)]
     
-    # Initialize particles randomly across the map
-    for _ in range(NUM_PARTICLES):
-        x = random.uniform(0, 10)
-        y = random.uniform(0, 10)
-        particles.append((x, y))
-
-    for _ in range(5):  # Iteratively refine particles
+    for _ in range(5):
         weights = []
         for p in particles:
-            error = 0
-            for router, true_distance in distances.items():
-                expected_distance = heuristic(p, routers[router])
-
-                # Check for obstruction
-                if not is_line_of_sight_clear(p, routers[router], walls):
-                    expected_distance = float('inf')  # Invalidate this distance if blocked by a wall
-
-                error += abs(expected_distance - true_distance)
-            weights.append(1 / (error + 1e-6))  # Avoid division by zero
+            error = sum(
+                abs(heuristic(p, routers[r]) - d) if is_line_of_sight_clear(p, routers[r], walls) else float('inf')
+                for r, d in distances.items()
+            )
+            weights.append(1 / (error + 1e-6))
         
-        # Normalize weights
         total_weight = sum(weights)
         if total_weight == 0:
             continue
         weights = [w / total_weight for w in weights]
+        particles = random.choices(particles, weights, k=NUM_PARTICLES)
 
-        # Resampling: pick particles based on weight
-        new_particles = random.choices(particles, weights, k=NUM_PARTICLES)
-        particles = new_particles
-
-    # Return the most probable location (mean of best particles)
     avg_x = sum(p[0] for p in particles) / len(particles)
     avg_y = sum(p[1] for p in particles) / len(particles)
     return (avg_x, avg_y)
 
-# A* Pathfinding Algorithm
 def a_star(graph, start, goal, unsafe_segments):
     open_set = [(0, start)]
     came_from = {}
@@ -77,12 +54,11 @@ def a_star(graph, start, goal, unsafe_segments):
 
     while open_set:
         _, current = heapq.heappop(open_set)
-
         if current == goal:
             return reconstruct_path(came_from, current), g_score[goal]
 
         for neighbor, distance in graph['nodes'][current]['connections'].items():
-            if (current, neighbor) in unsafe_segments or (neighbor, current) in unsafe_segments:
+            if not is_safe(neighbor) or (current, neighbor) in unsafe_segments:
                 continue
 
             tentative_g_score = g_score[current] + distance
@@ -91,10 +67,9 @@ def a_star(graph, start, goal, unsafe_segments):
                 g_score[neighbor] = tentative_g_score
                 f_score[neighbor] = tentative_g_score + heuristic(graph['nodes'][neighbor]['coords'], graph['nodes'][goal]['coords'])
                 heapq.heappush(open_set, (f_score[neighbor], neighbor))
-
+    
     return None, float('inf')
 
-# Reconstruct the shortest path
 def reconstruct_path(came_from, current):
     path = []
     while current in came_from:
@@ -103,9 +78,7 @@ def reconstruct_path(came_from, current):
     path.append(current)
     return path[::-1]
 
-# Main function
 def main():
-    # Building Layout (Graph)
     graph = json.loads('''{
         "nodes": {
             "Entrance": {"coords": [0, 0], "connections": {"Verandah": 2.5}},
@@ -123,38 +96,15 @@ def main():
         }
     }''')
 
-    # Wi-Fi routers placed at exact coordinates
-    routers = {
-        "Router1": (7.5, 2.0),
-        "Router2": (5.5, 3.5),
-        "Router3": (7.5, 9.0)
-    }
-
-    # Measured distances from Wi-Fi signals
-    distances = {
-        "Router1": 5,
-        "Router2": 2.5,
-        "Router3": 0
-    }
-
-    # Walls in the map (represented as line segments with start and end coordinates)
-    walls = [
-        (2.0, 2.0, 4.0, 4.0),  # Example wall from (2,2) to (4,4)
-        (5.0, 5.0, 7.0, 7.0)   # Example wall from (5,5) to (7,7)
-    ]
-
-    # Find user location using Particle Filter
+    routers = {"Router1": (7.5, 2.0), "Router2": (5.5, 3.5), "Router3": (7.5, 9.0)}
+    distances = {"Router1": 5, "Router2": 2.5, "Router3": 0}
+    walls = [(2.0, 2.0, 4.0, 4.0), (5.0, 5.0, 7.0, 7.7)]
     user_location = particle_filter_localization(routers, distances, walls)
     print(f"User is most likely at: {user_location}")
-
-    # Find nearest room
     start_node = min(graph['nodes'], key=lambda node: heuristic(graph['nodes'][node]['coords'], user_location))
     end_node = "Entrance"
-
-    # Compute the shortest path to the Entrance
     unsafe_segments = set()
     path, distance = a_star(graph, start_node, end_node, unsafe_segments)
-
     if path:
         print(f"Shortest safe path from {start_node} to {end_node}: {' -> '.join(path)}")
         print(f"Total distance: {distance:.2f} meters")
