@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evacuation Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #F4F4F4, #EAEAEA);
+            color: #333;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            transition: all 0.3s ease-in-out;
+        }
+
+        h1 {
+            padding: 20px;
+            margin: 0;
+            font-size: 2.5rem;
+            background: #2C2C2C;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 20px;
+            gap: 15px;
+        }
+
+        /* Cards */
+        .card {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 20px;
+            width: 320px;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            transform: scale(1);
+            text-align: left;
+            border: 1px solid #D3D3D3;
+        }
+
+        .card:hover {
+            transform: scale(1.02);
+            box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Full-width Cards */
+        .card.full-width {
+            width: 80%;
+            max-width: 800px;
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #444;
+            border-bottom: 2px solid #888;
+            padding-bottom: 5px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        ul li {
+            background: #EFEFEF;
+            margin: 8px 0;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 1rem;
+            color: #333;
+            animation: fadeIn 0.5s ease-in-out;
+            transition: background 0.3s ease-in-out;
+        }
+
+        ul li:hover {
+            background: #E0E0E0;
+        }
+
+        /* Status Indicators */
+        .status {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        .green { background: #4CAF50; }
+        .red { background: #E53935; }
+        .yellow { background: #FFB300; }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+    </style>
+</head>
+<body>
+    <h1>🚨 Emergency Evacuation Dashboard</h1>
+    
+    <div class="container">
+        <!-- First Row: Devices, Fire Nodes, Active Exits -->
+        <div class="card">
+            <h2>📍 Devices</h2>
+            <ul id="devices"></ul>
+        </div>
+        <div class="card">
+            <h2>🔥 Fire Nodes</h2>
+            <ul id="fire-nodes"></ul>
+        </div>
+        <div class="card">
+            <h2>🚪 Active Exits</h2>
+            <ul id="active-exits"></ul>
+        </div>
+
+        <!-- Second Row: Full-Width Node Congestion -->
+        <div class="card full-width">
+            <h2>🚦 Node Congestion</h2>
+            <ul id="node-congestion"></ul>
+        </div>
+
+        <!-- Third Row: Full-Width Emergency Status -->
+        <div class="card full-width">
+            <h2>⚠️ Emergency Status</h2>
+            <p id="emergency-status"><span class="status green"></span> All Clear</p>
+        </div>
+    </div>
+
+    <script>
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+        
+        socket.on('update', function(data) {
+            updateList('devices', data.devices.map(d => `📌 ${d.device_tag}: ${d.user_location}`));
+            updateList('fire-nodes', data.fire_nodes.map(n => `🔥 ${n}`));
+            updateList('active-exits', Object.entries(data.exits).map(([exit, users]) => `🚪 ${exit}: ${users.length} users`));
+            updateList('node-congestion', Object.entries(data.congestion).map(([node, count]) => `⚠️ ${node}: ${count} users`));
+            
+            // Update emergency status based on fire nodes
+            let statusElem = document.getElementById('emergency-status');
+            if (data.fire_nodes.length > 0) {
+                statusElem.innerHTML = `<span class="status red"></span> Danger - Fire Detected!`;
+            } else {
+                statusElem.innerHTML = `<span class="status green"></span> All Clear`;
+            }
+        });
+
+        function updateList(elementId, items) {
+            let list = document.getElementById(elementId);
+            list.innerHTML = '';
+            items.forEach(item => {
+                let li = document.createElement('li');
+                li.textContent = item;
+                list.appendChild(li);
+            });
+        }
+
+        // Request updates every 5 seconds
+        setInterval(() => {
+            socket.emit('request_update');
+        }, 5000);
+    </script>
+</body>
+</html>
