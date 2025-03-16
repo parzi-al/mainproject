@@ -3,6 +3,6 @@ flask-socketio
 gunicorn
 eventlet
 logging
-math
+eventlet
 numpy
 pandas

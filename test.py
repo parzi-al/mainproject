@@ -4,7 +4,7 @@ import time
 import threading
 
 # Configuration
-BASE_URL = "http://localhost:5000"
+BASE_URL = "https://mainproject-qc8w.onrender.com"
 NUM_DEVICES = 50
 FIRE_UPDATE_INTERVAL = 10  # seconds
 
