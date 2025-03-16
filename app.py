@@ -33,8 +33,8 @@ EXIT_CAPACITY = {
 CONGESTION_THRESHOLD = 5  # Maximum allowed users per node
 
 FIXED_ROUTERS = {
-    "CS_Lab": (4, 11),
-    "Placement_Cell": (1, 8),
+    "GNXS-2.4G-095C60": (4, 11),
+    "GNXS-5G-095C60": (1, 8),
     "MITS_STAFF": (8, 5)
 }
 
