@@ -34,7 +34,7 @@ CONGESTION_THRESHOLD = 5  # Maximum allowed users per node
 
 FIXED_ROUTERS = {
     "Nandhu": (4, 11),
-    "XRGDELL 2357": (1, 8),
+    "XRGDELL": (1, 8),
     "MITS_STAFF": (8, 5)
 }
 
