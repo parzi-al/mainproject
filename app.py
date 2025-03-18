@@ -33,36 +33,91 @@ EXIT_CAPACITY = {
 CONGESTION_THRESHOLD = 5  # Maximum allowed users per node
 
 FIXED_ROUTERS = {
-    "Nandhu": (4, 11),
-    "XRGDELL": (1, 8),
-    "MITS_STAFF": (8, 5)
+    "CS_Lab": (12, 3),         # Placed at CS Lab
+    "Placement_Cell": (5, 2),      # Placed at Turing Lab
+    "MITS_STAFF": (5, 1)   # Placed at Electrical & Electronics Department
 }
 
-graph = {
-        "nodes": {
-        "Staircase 1": {"coords": [0, 0], "connections": {"Passage 1": 5}},
-        "Passage 1": {"coords": [5, 0], "connections": {"Staircase 1": 5, "Elevator 1": 3, "Turing Lab": 2, "Grace Hopper Lab": 2, "Staircase 2": 5}},
-        "Elevator 1": {"coords": [2, 0], "connections": {"Passage 1": 3}},
-        "Turing Lab": {"coords": [5, 2], "connections": {"Passage 1": 2, "Electrical & Electronics Department": 3}},
-        "Grace Hopper Lab": {"coords": [5, -2], "connections": {"Passage 1": 2, "Language Lab": 2}},
-        "Language Lab": {"coords": [7, -2], "connections": {"Grace Hopper Lab": 2, "CAD Lab (CE)": 2}},
-        "CAD Lab (CE)": {"coords": [9, -2], "connections": {"Language Lab": 2, "Staircase 2": 3}},
-        "Staircase 2": {"coords": [10, 0], "connections": {"Passage 1": 5, "Dijkstra Lab": 2}},
-        "Elevator 2": {"coords": [8, 0], "connections": {"Passage 1": 3}},
-        "Dijkstra Lab": {"coords": [10, 2], "connections": {"Staircase 2": 2, "Codd Base Lab": 2}},
-        "Codd Base Lab": {"coords": [12, 2], "connections": {"Dijkstra Lab": 2, "Boy's Common Room": 2, "Fire Exit": 2}},
-        "Boy's Common Room": {"coords": [12, 4], "connections": {"Codd Base Lab": 2, "Steve Jobs Hall": 2}},
-        "Steve Jobs Hall": {"coords": [10, 4], "connections": {"Boy's Common Room": 2, "Measurements Lab": 2}},
-        "Measurements Lab": {"coords": [8, 4], "connections": {"Steve Jobs Hall": 2, "Michael Faraday Hall": 2}},
-        "Michael Faraday Hall": {"coords": [6, 4], "connections": {"Measurements Lab": 2, "Departmental Library": 2}},
-        "Departmental Library": {"coords": [4, 4], "connections": {"Michael Faraday Hall": 2, "Ladies Toilet": 2}},
-        "Ladies Toilet": {"coords": [2, 4], "connections": {"Departmental Library": 2}},
-        "Fire Exit": {"coords": [12, 0], "connections": {"Codd Base Lab": 2}},
-        "Electrical Room": {"coords": [12, 6], "connections": {"Codd Base Lab": 4}},
-        "Gent's Toilet": {"coords": [0, 2], "connections": {"Staircase 1": 2}}
+graph ={
+    
+    "nodes": {
+        "Staircase 1": {"coords": [0, 0], "connections": {"Passage": 5}},
+        "Elevator 1": {"coords": [2, 0], "connections": {"Passage": 3}},
+        "Passage": {
+            "coords": [5, 0],
+            "connections": {
+                "Staircase 1": 5,
+                "Elevator 1": 3,
+                "Electrical & Electronics Department": 3,
+                "Turing Lab": 4,
+                "Grace Hopper Lab": 4,
+                "Language Lab": 5,
+                "CAD Lab (CE)": 6,
+                "Staircase 2": 7,
+                "Elevator 2": 5,
+                "Dijkstra Lab": 8,
+                "Codd Base Lab": 10,
+                "Fire Exit": 12,
+                "Boy's Common Room": 11,
+                "Steve Jobs Hall": 12,
+                "Measurements Lab": 13,
+                "Michael Faraday Hall": 14,
+                "Departmental Library": 15,
+                "Ladies Toilet": 16,
+                "Electrical Room": 17,
+                "Gent's Toilet": 6
+            }
+        },
+        "Electrical & Electronics Department": {"coords": [5, 2], "connections": {"Passage": 3}},
+        "Turing Lab": {"coords": [5, 4], "connections": {"Passage": 4}},
+        "Grace Hopper Lab": {"coords": [5, -4], "connections": {"Passage": 4}},
+        "Language Lab": {"coords": [8, -4], "connections": {"Passage": 5}},
+        "CAD Lab (CE)": {"coords": [11, -4], "connections": {"Passage": 6}},
+        "Staircase 2": {"coords": [12, 0], "connections": {"Passage": 7}},
+        "Elevator 2": {"coords": [9, 0], "connections": {"Passage": 5}},
+        "Dijkstra Lab": {"coords": [12, 3], "connections": {"Passage": 8}},
+        "Codd Base Lab": {"coords": [15, 3], "connections": {"Passage": 10}},
+        "Boy's Common Room": {"coords": [15, 6], "connections": {"Passage": 11}},
+        "Steve Jobs Hall": {"coords": [12, 6], "connections": {"Passage": 12}},
+        "Measurements Lab": {"coords": [9, 6], "connections": {"Passage": 13}},
+        "Michael Faraday Hall": {"coords": [6, 6], "connections": {"Passage": 14}},
+        "Departmental Library": {"coords": [3, 6], "connections": {"Passage": 15}},
+        "Ladies Toilet": {"coords": [0, 6], "connections": {"Passage": 16}},
+        "Fire Exit": {"coords": [15, 0], "connections": {"Passage": 12}},
+        "Electrical Room": {"coords": [15, 9], "connections": {"Passage": 17}},
+        "Gent's Toilet": {"coords": [0, 3], "connections": {"Passage": 6}}
     }
 
+
+
+
 }
+
+# graph = {
+#         "nodes": {
+#         "Staircase 1": {"coords": [0, 0], "connections": {"Passage 1": 5}},
+#         "Passage 1": {"coords": [5, 0], "connections": {"Staircase 1": 5, "Elevator 1": 3, "Turing Lab": 2, "Grace Hopper Lab": 2, "Staircase 2": 5}},
+#         "Elevator 1": {"coords": [2, 0], "connections": {"Passage 1": 3}},
+#         "Turing Lab": {"coords": [5, 2], "connections": {"Passage 1": 2, "Electrical & Electronics Department": 3}},
+#         "Grace Hopper Lab": {"coords": [5, -2], "connections": {"Passage 1": 2, "Language Lab": 2}},
+#         "Language Lab": {"coords": [7, -2], "connections": {"Grace Hopper Lab": 2, "CAD Lab (CE)": 2}},
+#         "CAD Lab (CE)": {"coords": [9, -2], "connections": {"Language Lab": 2, "Staircase 2": 3}},
+#         "Staircase 2": {"coords": [10, 0], "connections": {"Passage 1": 5, "Dijkstra Lab": 2}},
+#         "Elevator 2": {"coords": [8, 0], "connections": {"Passage 1": 3}},
+#         "Dijkstra Lab": {"coords": [10, 2], "connections": {"Staircase 2": 2, "Codd Base Lab": 2}},
+#         "Codd Base Lab": {"coords": [12, 2], "connections": {"Dijkstra Lab": 2, "Boy's Common Room": 2, "Fire Exit": 2}},
+#         "Boy's Common Room": {"coords": [12, 4], "connections": {"Codd Base Lab": 2, "Steve Jobs Hall": 2}},
+#         "Steve Jobs Hall": {"coords": [10, 4], "connections": {"Boy's Common Room": 2, "Measurements Lab": 2}},
+#         "Measurements Lab": {"coords": [8, 4], "connections": {"Steve Jobs Hall": 2, "Michael Faraday Hall": 2}},
+#         "Michael Faraday Hall": {"coords": [6, 4], "connections": {"Measurements Lab": 2, "Departmental Library": 2}},
+#         "Departmental Library": {"coords": [4, 4], "connections": {"Michael Faraday Hall": 2, "Ladies Toilet": 2}},
+#         "Ladies Toilet": {"coords": [2, 4], "connections": {"Departmental Library": 2}},
+#         "Fire Exit": {"coords": [12, 0], "connections": {"Codd Base Lab": 2}},
+#         "Electrical Room": {"coords": [12, 6], "connections": {"Codd Base Lab": 4}},
+#         "Gent's Toilet": {"coords": [0, 2], "connections": {"Staircase 1": 2}}
+#     }
+
+# }
 
 # Initialize node congestion
 node_congestion = {node: 0 for node in graph['nodes']}
